@@ -3,31 +3,416 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Compare CIS security benchmarks across Windows Server, RHEL, and other platforms. Free online tool for security compliance mapping.">
-    <meta name="keywords" content="CIS benchmark, security compliance, Windows Server 2022, RHEL 8, security controls">
-    <meta name="author" content="driedsoba">
-    
-    <!-- Open Graph -->
-    <meta property="og:title" content="CIS Benchmark Comparison Tool">
-    <meta property="og:description" content="Multi-platform security benchmark comparison and mapping tool">
-    <meta property="og:url" content="https://cisbenchmarkcompare.vercel.app">
-    <meta property="og:type" content="website">
-    
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="CIS Benchmark Comparison Tool">
-    <meta name="twitter:description" content="Compare security benchmarks across platforms">
-    
-    <title>CIS Benchmark Comparison Tool - Security Compliance Mapping</title>
-    
-    <link rel="stylesheet" href="/src/styles.css">
+    <title>Multi-Platform CIS Benchmark Comparison Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            text-align: center;
+            color: #333;
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .nav-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .welcome-page {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        
+        .welcome-title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .welcome-description {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .feature-description {
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .comparison-page {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .platform-icon {
+            font-size: 1.5em;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .sample-data-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .sample-data-btn:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+        
+        .compare-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .compare-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .threshold-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="range"] {
+            width: 150px;
+        }
+        
+        .stats {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .results {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 15px 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .exact-matches { background: #28a745; }
+        .similar-matches { background: #ffc107; color: #333; }
+        .same-id-different { background: #fd7e14; color: white; }
+        .left-only { background: #dc3545; }
+        .right-only { background: #17a2b8; }
+        
+        .section-content {
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+        }
+        
+        .section-content.collapsed {
+            display: none;
+        }
+        
+        .match-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .match-item:last-child {
+            border-bottom: none;
+        }
+        
+        .check-id {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .title {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        
+        .left-title {
+            color: #0066cc;
+        }
+        
+        .right-title {
+            color: #cc6600;
+        }
+        
+        .similarity-score {
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            float: right;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        
+        .export-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .export-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .export-button:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .nav-tab {
+                width: 200px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo" title="Version 1.0.0">🔒 CIS Benchmark Mapper</div>
+            <div class="logo">🔒 CIS Benchmark Mapper</div>
             <div class="subtitle">Multi-Platform Security Configuration Comparison Tool</div>
             <div class="nav-tabs">
                 <button class="nav-tab active" onclick="showPage('home')">🏠 Home</button>
@@ -171,10 +556,936 @@
         </div>
     </div>
 
-    <script src="/src/sample-data.js"></script>
-    <script src="/src/app.js"></script>
-    
-    <!-- Vercel Analytics -->
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script>
+        // Sample data for Windows Server 2022
+        const windowsSampleData = {
+            left: `1.1.1	Ensure 'Enforce password history' is set to '24 or more passwords'
+1.1.2	Ensure 'Maximum password age' is set to '365 or fewer days, but not 0'
+1.1.3	Ensure 'Minimum password age' is set to '1 or more day(s)'
+1.1.4	Ensure 'Minimum password length' is set to '14 or more character(s)'
+1.1.5	Ensure 'Password must meet complexity requirements' is set to 'Enabled'
+1.1.6	Ensure 'Store passwords using reversible encryption' is set to 'Disabled'
+1.2.1	Ensure 'Account lockout duration' is set to '15 or more minute(s)'
+1.2.2	Ensure 'Account lockout threshold' is set to '5 or fewer invalid logon attempt(s)'
+1.2.3	Ensure 'Reset account lockout counter after' is set to '15 or more minute(s)'
+2.2.1	Ensure 'Access Credential Manager as a trusted caller' is set to 'No One'
+2.2.2	Ensure 'Access this computer from the network' is set to 'Administrators, Authenticated Users'
+2.2.3	Ensure 'Act as part of the operating system' is set to 'No One'
+2.2.4	Ensure 'Add workstations to domain' is set to 'Administrators'
+2.2.5	Ensure 'Adjust memory quotas for a process' is set to 'Administrators, LOCAL SERVICE, NETWORK SERVICE'
+2.3.1.1	Ensure 'Accounts: Block Microsoft accounts' is set to 'Users can't add or log on with Microsoft accounts'
+2.3.1.2	Ensure 'Accounts: Guest account status' is set to 'Disabled'
+2.3.1.3	Ensure 'Accounts: Limit local account use of blank passwords to console logon only' is set to 'Enabled'
+2.3.1.4	Ensure 'Accounts: Rename administrator account' is configured
+2.3.1.5	Ensure 'Accounts: Rename guest account' is configured
+9.1.1	Ensure 'Windows Firewall: Domain: Firewall state' is set to 'On'
+9.1.2	Ensure 'Windows Firewall: Domain: Inbound connections' is set to 'Block'
+9.1.3	Ensure 'Windows Firewall: Domain: Outbound connections' is set to 'Allow'
+9.1.4	Ensure 'Windows Firewall: Domain: Settings: Display a notification' is set to 'No'
+9.1.5	Ensure 'Windows Firewall: Domain: Logging: Name' is set to appropriate path
+18.1.1.1	Ensure 'Prevent enabling lock screen camera' is set to 'Enabled'
+18.1.1.2	Ensure 'Prevent enabling lock screen slide show' is set to 'Enabled'
+18.1.2.1	Ensure 'Allow users to enable online speech recognition services' is set to 'Disabled'
+18.1.2.2	Ensure 'Allow Online Tips' is set to 'Disabled'
+18.1.3	Ensure 'Configure Authenticated Proxy usage for the Connected User Experience and Telemetry service' is set to 'Enabled: Disable Authenticated Proxy usage'`,
+            right: `1.1.1	Company Policy: Password history must be 12 or more passwords
+1.1.2	Company Policy: Maximum password age is 90 days
+1.1.3	Company Policy: Minimum password age is 1 day
+1.1.4	Company Policy: Minimum password length is 12 characters
+1.1.5	Company Policy: Password complexity is required
+1.1.6	Company Policy: Reversible encryption is disabled
+1.2.1	Company Policy: Account lockout duration is 30 minutes
+1.2.2	Company Policy: Account lockout threshold is 3 attempts
+1.2.3	Company Policy: Reset lockout counter after 30 minutes
+2.2.1	Company Policy: Credential Manager access restricted to administrators
+2.2.2	Company Policy: Network access limited to authenticated users
+2.2.3	Company Policy: Operating system access denied to all users
+2.2.4	Company Policy: Domain workstation addition restricted to domain admins
+2.2.5	Company Policy: Memory quota adjustment limited to system services
+2.3.1.1	Company Policy: Microsoft accounts are blocked for all users
+2.3.1.2	Company Policy: Guest account is disabled
+2.3.1.3	Company Policy: Blank passwords restricted to console only
+2.3.1.4	Company Policy: Administrator account renamed to 'SysAdmin'
+2.3.1.5	Company Policy: Guest account renamed to 'Visitor'
+9.1.1	Company Policy: Domain firewall is enabled
+9.1.2	Company Policy: Inbound connections blocked by default
+9.1.3	Company Policy: Outbound connections allowed with exceptions
+9.1.4	Company Policy: Firewall notifications are disabled
+9.1.5	Company Policy: Firewall logging enabled to secure location
+18.1.1.1	Company Policy: Lock screen camera is disabled
+18.1.1.2	Company Policy: Lock screen slide show is disabled
+18.1.2.1	Company Policy: Online speech recognition is disabled
+18.1.2.2	Company Policy: Online tips are disabled
+18.1.3	Company Policy: Telemetry proxy usage is disabled`
+        };
+
+        // Sample data for RHEL 8
+        const rhelSampleData = {
+            left: `1.1.1.1	Ensure mounting of cramfs filesystems is disabled
+1.1.1.2	Ensure mounting of freevxfs filesystems is disabled
+1.1.1.3	Ensure mounting of jffs2 filesystems is disabled
+1.1.1.4	Ensure mounting of hfs filesystems is disabled
+1.1.1.5	Ensure mounting of hfsplus filesystems is disabled
+1.1.1.6	Ensure mounting of squashfs filesystems is disabled
+1.1.1.7	Ensure mounting of udf filesystems is disabled
+1.1.1.8	Ensure mounting of FAT filesystems is disabled
+1.1.2	Ensure /tmp is configured
+1.1.3	Ensure nodev option set on /tmp partition
+1.1.4	Ensure nosuid option set on /tmp partition
+1.1.5	Ensure noexec option set on /tmp partition
+1.1.6	Ensure separate partition exists for /var
+1.1.7	Ensure separate partition exists for /var/tmp
+1.1.8	Ensure nodev option set on /var/tmp partition
+1.1.9	Ensure nosuid option set on /var/tmp partition
+1.1.10	Ensure noexec option set on /var/tmp partition
+1.2.1	Ensure package manager repositories are configured
+1.2.2	Ensure GPG keys are configured
+1.2.3	Ensure gpgcheck is globally activated
+1.2.4	Ensure repo_gpgcheck is globally activated
+1.3.1	Ensure AIDE is installed
+1.3.2	Ensure filesystem integrity is regularly checked
+1.4.1	Ensure permissions on bootloader config are configured
+1.4.2	Ensure bootloader password is set
+1.4.3	Ensure permissions on bootloader config are configured
+1.5.1	Ensure core dumps are restricted
+1.5.2	Ensure XD/NX support is enabled
+1.5.3	Ensure address space layout randomization (ASLR) is enabled
+1.5.4	Ensure prelink is disabled
+2.1.1	Ensure xinetd is not installed
+2.1.2	Ensure openbsd-inetd is not installed
+2.2.1	Ensure time synchronization is in use
+2.2.2	Ensure systemd-timesyncd is configured
+2.2.3	Ensure chrony is configured
+3.1.1	Ensure IP forwarding is disabled
+3.1.2	Ensure packet redirect sending is disabled
+3.2.1	Ensure source routed packets are not accepted
+3.2.2	Ensure ICMP redirects are not accepted
+3.2.3	Ensure secure ICMP redirects are not accepted
+3.2.4	Ensure suspicious packets are logged
+3.2.5	Ensure broadcast ICMP requests are ignored
+3.2.6	Ensure bogus ICMP responses are ignored
+3.2.7	Ensure Reverse Path Filtering is enabled
+3.2.8	Ensure TCP SYN Cookies is enabled
+3.2.9	Ensure IPv6 router advertisements are not accepted
+3.3.1	Ensure DCCP is disabled
+3.3.2	Ensure SCTP is disabled
+3.3.3	Ensure RDS is disabled
+3.3.4	Ensure TIPC is disabled
+4.1.1.1	Ensure auditd is installed
+4.1.1.2	Ensure auditd service is enabled
+4.1.1.3	Ensure auditing for processes that start prior to auditd is enabled
+4.1.1.4	Ensure audit_backlog_limit is sufficient
+4.1.2.1	Ensure audit log storage size is configured
+4.1.2.2	Ensure audit logs are not automatically deleted
+4.1.2.3	Ensure system is disabled when audit logs are full
+4.1.3	Ensure events that modify date and time information are collected
+4.1.4	Ensure events that modify user/group information are collected
+4.1.5	Ensure events that modify the system's network environment are collected
+4.1.6	Ensure events that modify the system's Mandatory Access Controls are collected
+4.1.7	Ensure login and logout events are collected
+4.1.8	Ensure session initiation information is collected
+4.1.9	Ensure discretionary access control permission modification events are collected
+4.1.10	Ensure unsuccessful unauthorized file access attempts are collected
+4.1.11	Ensure use of privileged commands is collected
+4.1.12	Ensure successful file system mounts are collected
+4.1.13	Ensure file deletion events by users are collected
+4.1.14	Ensure changes to system administration scope (sudoers) is collected
+4.1.15	Ensure system administrator actions (sudolog) are collected
+4.1.16	Ensure kernel module loading and unloading is collected
+4.1.17	Ensure the audit configuration is immutable
+4.2.1.1	Ensure rsyslog is installed
+4.2.1.2	Ensure rsyslog Service is enabled
+4.2.1.3	Ensure rsyslog default file permissions configured
+4.2.1.4	Ensure logging is configured
+4.2.1.5	Ensure rsyslog is configured to send logs to a remote log host
+4.2.1.6	Ensure remote rsyslog messages are only accepted on designated log hosts
+4.2.2.1	Ensure journald is configured to send logs to rsyslog
+4.2.2.2	Ensure journald is configured to compress large log files
+4.2.2.3	Ensure journald is configured to write logfiles to persistent disk
+4.2.3	Ensure permissions on all logfiles are configured
+5.1.1	Ensure cron daemon is enabled
+5.1.2	Ensure permissions on /etc/crontab are configured
+5.1.3	Ensure permissions on /etc/cron.hourly are configured
+5.1.4	Ensure permissions on /etc/cron.daily are configured
+5.1.5	Ensure permissions on /etc/cron.weekly are configured
+5.1.6	Ensure permissions on /etc/cron.monthly are configured
+5.1.7	Ensure permissions on /etc/cron.d are configured
+5.1.8	Ensure at/cron is restricted to authorized users
+5.2.1	Ensure permissions on /etc/ssh/sshd_config are configured
+5.2.2	Ensure permissions on SSH private host key files are configured
+5.2.3	Ensure permissions on SSH public host key files are configured
+5.2.4	Ensure SSH Protocol is set to 2
+5.2.5	Ensure SSH LogLevel is appropriate
+5.2.6	Ensure SSH X11 forwarding is disabled
+5.2.7	Ensure SSH MaxAuthTries is set to 4 or less
+5.2.8	Ensure SSH IgnoreRhosts is enabled
+5.2.9	Ensure SSH HostbasedAuthentication is disabled
+5.2.10	Ensure SSH root login is disabled
+5.2.11	Ensure SSH PermitEmptyPasswords is disabled
+5.2.12	Ensure SSH PermitUserEnvironment is disabled
+5.2.13	Ensure only strong Ciphers are used
+5.2.14	Ensure only strong MAC algorithms are used
+5.2.15	Ensure only strong Key Exchange algorithms are used
+5.2.16	Ensure SSH Idle Timeout Interval is configured
+5.2.17	Ensure SSH LoginGraceTime is set to one minute or less
+5.2.18	Ensure SSH access is limited
+5.2.19	Ensure SSH warning banner is configured
+5.2.20	Ensure SSH PAM is enabled
+5.2.21	Ensure SSH AllowTcpForwarding is disabled
+5.2.22	Ensure SSH MaxStartups is configured
+5.2.23	Ensure SSH MaxSessions is set to 10 or less
+5.3.1	Ensure password creation requirements are configured
+5.3.2	Ensure lockout for failed password attempts is configured
+5.3.3	Ensure password reuse is limited
+5.3.4	Ensure password hashing algorithm is SHA-512
+5.4.1.1	Ensure password expiration is 365 days or less
+5.4.1.2	Ensure minimum days between password changes is 7 or more
+5.4.1.3	Ensure password expiration warning days is 7 or more
+5.4.1.4	Ensure inactive password lock is 30 days or less
+5.4.1.5	Ensure all users last password change date is in the past
+5.4.2	Ensure system accounts are secured
+5.4.3	Ensure default group for the root account is GID 0
+5.4.4	Ensure default user umask is 027 or more restrictive
+5.4.5	Ensure default user shell timeout is 900 seconds or less
+5.5	Ensure root login is restricted to system console
+5.6	Ensure access to the su command is restricted
+6.1.1	Audit system file permissions
+6.1.2	Ensure permissions on /etc/passwd are configured
+6.1.3	Ensure permissions on /etc/gshadow- are configured
+6.1.4	Ensure permissions on /etc/shadow are configured
+6.1.5	Ensure permissions on /etc/group are configured
+6.1.6	Ensure permissions on /etc/passwd- are configured
+6.1.7	Ensure permissions on /etc/shadow- are configured
+6.1.8	Ensure permissions on /etc/group- are configured
+6.1.9	Ensure permissions on /etc/gshadow are configured
+6.1.10	Ensure no world writable files exist
+6.1.11	Ensure no unowned files or directories exist
+6.1.12	Ensure no ungrouped files or directories exist
+6.1.13	Audit SUID executables
+6.1.14	Audit SGID executables
+6.2.1	Ensure password fields are not empty
+6.2.2	Ensure no legacy "+" entries exist in /etc/passwd
+6.2.3	Ensure root PATH Integrity
+6.2.4	Ensure no legacy "+" entries exist in /etc/shadow
+6.2.5	Ensure no legacy "+" entries exist in /etc/group
+6.2.6	Ensure root is the only UID 0 account
+6.2.7	Ensure users' home directories permissions are 750 or more restrictive
+6.2.8	Ensure users own their home directories
+6.2.9	Ensure users' dot files are not group or world writable
+6.2.10	Ensure no users have .forward files
+6.2.11	Ensure no users have .netrc files
+6.2.12	Ensure users' .netrc Files are not group or world accessible
+6.2.13	Ensure no users have .rhosts files
+6.2.14	Ensure all groups in /etc/passwd exist in /etc/group
+6.2.15	Ensure no duplicate UIDs exist
+6.2.16	Ensure no duplicate GIDs exist
+6.2.17	Ensure no duplicate user names exist
+6.2.18	Ensure no duplicate group names exist
+6.2.19	Ensure shadow group is empty
+6.2.20	Ensure all users' home directories exist`,
+            right: `1.1.1.1	Company Policy: cramfs filesystem mounting is prohibited
+1.1.1.2	Company Policy: freevxfs filesystem mounting is prohibited
+1.1.1.3	Company Policy: jffs2 filesystem mounting is prohibited
+1.1.1.4	Company Policy: hfs filesystem mounting is prohibited
+1.1.1.5	Company Policy: hfsplus filesystem mounting is prohibited
+1.1.1.6	Company Policy: squashfs filesystem mounting is prohibited
+1.1.1.7	Company Policy: udf filesystem mounting is prohibited
+1.1.1.8	Company Policy: FAT filesystem mounting is prohibited
+1.1.2	Company Policy: Temporary directories must be on separate partitions
+1.1.3	Company Policy: No device files in /tmp
+1.1.4	Company Policy: No setuid programs in /tmp
+1.1.5	Company Policy: No executable files in /tmp
+1.1.6	Company Policy: Variable data on separate partition required
+1.1.7	Company Policy: Temporary variable data on separate partition
+1.1.8	Company Policy: No device files in /var/tmp
+1.1.9	Company Policy: No setuid programs in /var/tmp
+1.1.10	Company Policy: No executable files in /var/tmp
+1.2.1	Company Policy: Package repositories must be configured securely
+1.2.2	Company Policy: GPG key verification is mandatory
+1.2.3	Company Policy: Package integrity checking is required
+1.2.4	Company Policy: Repository integrity checking is required
+1.3.1	Company Policy: File integrity monitoring tool is required
+1.3.2	Company Policy: Regular integrity checks are mandatory
+1.4.1	Company Policy: Boot loader configuration must be protected
+1.4.2	Company Policy: Boot loader password is required
+1.4.3	Company Policy: Boot configuration file permissions restricted
+1.5.1	Company Policy: Core dumps must be disabled
+1.5.2	Company Policy: Execution prevention is required
+1.5.3	Company Policy: Address randomization is mandatory
+1.5.4	Company Policy: Binary optimization tools are prohibited
+2.1.1	Company Policy: Legacy inet services are prohibited
+2.1.2	Company Policy: BSD inet services are prohibited
+2.2.1	Company Policy: Network time synchronization is required
+2.2.2	Company Policy: System time daemon must be configured
+2.2.3	Company Policy: Chrony time service configuration required
+3.1.1	Company Policy: IP packet forwarding is disabled
+3.1.2	Company Policy: Packet redirection is disabled
+3.2.1	Company Policy: Source routing is disabled
+3.2.2	Company Policy: ICMP redirects are blocked
+3.2.3	Company Policy: Secure ICMP redirects are blocked
+3.2.4	Company Policy: Suspicious network packets are logged
+3.2.5	Company Policy: Broadcast ICMP is ignored
+3.2.6	Company Policy: Invalid ICMP responses are ignored
+3.2.7	Company Policy: Reverse path filtering is enabled
+3.2.8	Company Policy: TCP SYN cookies are enabled
+3.2.9	Company Policy: IPv6 router advertisements are blocked
+3.3.1	Company Policy: DCCP protocol is disabled
+3.3.2	Company Policy: SCTP protocol is disabled
+3.3.3	Company Policy: RDS protocol is disabled
+3.3.4	Company Policy: TIPC protocol is disabled
+4.1.1.1	Company Policy: System auditing service is installed
+4.1.1.2	Company Policy: Audit service is enabled at boot
+4.1.1.3	Company Policy: Early process auditing is enabled
+4.1.1.4	Company Policy: Audit backlog buffer is sufficient
+4.1.2.1	Company Policy: Audit log size limits are configured
+4.1.2.2	Company Policy: Audit logs are preserved
+4.1.2.3	Company Policy: System halts when audit storage is full
+4.1.3	Company Policy: Date/time modifications are audited
+4.1.4	Company Policy: User/group modifications are audited
+4.1.5	Company Policy: Network environment changes are audited
+4.1.6	Company Policy: Access control changes are audited
+4.1.7	Company Policy: Login/logout events are audited
+4.1.8	Company Policy: Session information is audited
+4.1.9	Company Policy: Permission changes are audited
+4.1.10	Company Policy: Failed file access is audited
+4.1.11	Company Policy: Privileged command usage is audited
+4.1.12	Company Policy: File system mounts are audited
+4.1.13	Company Policy: File deletions are audited
+4.1.14	Company Policy: Admin scope changes are audited
+4.1.15	Company Policy: Admin actions are audited
+4.1.16	Company Policy: Kernel module changes are audited
+4.1.17	Company Policy: Audit configuration is protected
+4.2.1.1	Company Policy: System logging service is installed
+4.2.1.2	Company Policy: Logging service is enabled
+4.2.1.3	Company Policy: Log file permissions are restricted
+4.2.1.4	Company Policy: Logging configuration is comprehensive
+4.2.1.5	Company Policy: Remote logging is configured
+4.2.1.6	Company Policy: Remote log acceptance is controlled
+4.2.2.1	Company Policy: Journal logs are forwarded to syslog
+4.2.2.2	Company Policy: Large log files are compressed
+4.2.2.3	Company Policy: Logs are stored persistently
+4.2.3	Company Policy: All log files have proper permissions
+5.1.1	Company Policy: Scheduled task service is enabled
+5.1.2	Company Policy: Cron configuration is protected
+5.1.3	Company Policy: Hourly cron permissions are restricted
+5.1.4	Company Policy: Daily cron permissions are restricted
+5.1.5	Company Policy: Weekly cron permissions are restricted
+5.1.6	Company Policy: Monthly cron permissions are restricted
+5.1.7	Company Policy: Cron directory permissions are restricted
+5.1.8	Company Policy: Cron access is limited to authorized users
+5.2.1	Company Policy: SSH configuration is protected
+5.2.2	Company Policy: SSH private keys are secured
+5.2.3	Company Policy: SSH public keys are properly configured
+5.2.4	Company Policy: SSH uses secure protocol version
+5.2.5	Company Policy: SSH logging level is appropriate
+5.2.6	Company Policy: SSH X11 forwarding is disabled
+5.2.7	Company Policy: SSH authentication attempts are limited
+5.2.8	Company Policy: SSH ignores .rhosts files
+5.2.9	Company Policy: SSH host-based authentication is disabled
+5.2.10	Company Policy: SSH root login is prohibited
+5.2.11	Company Policy: SSH empty passwords are prohibited
+5.2.12	Company Policy: SSH user environment forwarding is disabled
+5.2.13	Company Policy: SSH uses strong encryption ciphers
+5.2.14	Company Policy: SSH uses strong MAC algorithms
+5.2.15	Company Policy: SSH uses strong key exchange algorithms
+5.2.16	Company Policy: SSH idle timeout is configured
+5.2.17	Company Policy: SSH login grace time is limited
+5.2.18	Company Policy: SSH access is restricted to specific users
+5.2.19	Company Policy: SSH warning banner is displayed
+5.2.20	Company Policy: SSH PAM authentication is enabled
+5.2.21	Company Policy: SSH TCP forwarding is disabled
+5.2.22	Company Policy: SSH max startups is limited
+5.2.23	Company Policy: SSH max sessions is limited
+5.3.1	Company Policy: Password complexity requirements are enforced
+5.3.2	Company Policy: Account lockout is configured for failed attempts
+5.3.3	Company Policy: Password reuse is prevented
+5.3.4	Company Policy: Strong password hashing is used
+5.4.1.1	Company Policy: Password expiration is enforced
+5.4.1.2	Company Policy: Minimum password age is set
+5.4.1.3	Company Policy: Password expiration warning is configured
+5.4.1.4	Company Policy: Inactive accounts are locked
+5.4.1.5	Company Policy: Password change dates are validated
+5.4.2	Company Policy: System accounts are secured
+5.4.3	Company Policy: Root account group is restricted
+5.4.4	Company Policy: Default file permissions are restrictive
+5.4.5	Company Policy: Shell timeout is configured
+5.5	Company Policy: Root console access is restricted
+5.6	Company Policy: Su command access is limited
+6.1.1	Company Policy: System file permissions are audited
+6.1.2	Company Policy: Password file permissions are restricted
+6.1.3	Company Policy: Group shadow file permissions are restricted
+6.1.4	Company Policy: Shadow file permissions are restricted
+6.1.5	Company Policy: Group file permissions are restricted
+6.1.6	Company Policy: Password backup file permissions are restricted
+6.1.7	Company Policy: Shadow backup file permissions are restricted
+6.1.8	Company Policy: Group backup file permissions are restricted
+6.1.9	Company Policy: Group shadow file permissions are restricted
+6.1.10	Company Policy: World-writable files are prohibited
+6.1.11	Company Policy: Unowned files are not allowed
+6.1.12	Company Policy: Ungrouped files are not allowed
+6.1.13	Company Policy: SUID executables are audited
+6.1.14	Company Policy: SGID executables are audited
+6.2.1	Company Policy: Empty password fields are prohibited
+6.2.2	Company Policy: Legacy plus entries are prohibited in passwd
+6.2.3	Company Policy: Root PATH integrity is maintained
+6.2.4	Company Policy: Legacy plus entries are prohibited in shadow
+6.2.5	Company Policy: Legacy plus entries are prohibited in group
+6.2.6	Company Policy: Only root has UID 0
+6.2.7	Company Policy: User home directory permissions are restrictive
+6.2.8	Company Policy: Users own their home directories
+6.2.9	Company Policy: User dot files are not world-writable
+6.2.10	Company Policy: Forward files are prohibited
+6.2.11	Company Policy: Netrc files are prohibited
+6.2.12	Company Policy: Netrc files are not accessible to others
+6.2.13	Company Policy: Rhosts files are prohibited
+6.2.14	Company Policy: All passwd groups exist in group file
+6.2.15	Company Policy: Duplicate UIDs are prohibited
+6.2.16	Company Policy: Duplicate GIDs are prohibited
+6.2.17	Company Policy: Duplicate usernames are prohibited
+6.2.18	Company Policy: Duplicate group names are prohibited
+6.2.19	Company Policy: Shadow group is empty
+6.2.20	Company Policy: All user home directories exist`
+        };
+
+        // Navigation functions
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.add('active');
+            
+            // Set active tab
+            event.target.classList.add('active');
+        }
+
+        // Update threshold displays
+        document.getElementById('windowsThreshold').addEventListener('input', function() {
+            const value = Math.round(this.value * 100);
+            document.getElementById('windowsThresholdValue').textContent = value + '%';
+        });
+
+        document.getElementById('rhelThreshold').addEventListener('input', function() {
+            const value = Math.round(this.value * 100);
+            document.getElementById('rhelThresholdValue').textContent = value + '%';
+        });
+
+        // Load sample data functions
+        function loadWindowsSampleData() {
+            document.getElementById('windows-left').value = windowsSampleData.left;
+            document.getElementById('windows-right').value = windowsSampleData.right;
+        }
+
+        function loadRhelSampleData() {
+            document.getElementById('rhel-left').value = rhelSampleData.left;
+            document.getElementById('rhel-right').value = rhelSampleData.right;
+        }
+
+        // Data parsing function
+        function parseData(text) {
+            const lines = text.trim().split('\n');
+            const data = [];
+            
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                
+                // Split by multiple spaces or tab
+                const parts = trimmed.split(/\s{2,}|\t/);
+                if (parts.length >= 2) {
+                    const checkId = parts[0].trim();
+                    const title = parts.slice(1).join(' ').trim();
+                    data.push({ id: checkId, title: title });
+                }
+            });
+            
+            return data;
+        }
+
+        // Similarity calculation
+        function calculateSimilarity(str1, str2) {
+            const normalize = (s) => s.toLowerCase()
+                .replace(/[^\w\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            const s1 = normalize(str1);
+            const s2 = normalize(str2);
+            
+            if (s1 === s2) return 1.0;
+            
+            const words1 = new Set(s1.split(' '));
+            const words2 = new Set(s2.split(' '));
+            
+            const intersection = new Set([...words1].filter(x => words2.has(x)));
+            const union = new Set([...words1, ...words2]);
+            
+            return intersection.size / union.size;
+        }
+
+        // Find best matches
+        function findBestMatches(leftData, rightData, threshold) {
+            const results = {
+                exactMatches: [],
+                similarMatches: [],
+                sameIdDifferentContent: [],
+                leftOnly: [],
+                rightOnly: [],
+                used: new Set()
+            };
+
+            // Step 1: Find exact ID and title matches
+            leftData.forEach(leftItem => {
+                const exactMatch = rightData.find(rightItem => 
+                    rightItem.id === leftItem.id && 
+                    rightItem.title.toLowerCase().trim() === leftItem.title.toLowerCase().trim()
+                );
+                
+                if (exactMatch) {
+                    results.exactMatches.push({
+                        left: leftItem,
+                        right: exactMatch,
+                        similarity: 1.0,
+                        matchType: 'exact'
+                    });
+                    results.used.add(exactMatch.id);
+                }
+            });
+
+            // Step 2: Find same ID but different content
+            leftData.forEach(leftItem => {
+                const alreadyMatched = results.exactMatches.some(match => match.left.id === leftItem.id);
+                if (alreadyMatched) return;
+
+                const sameIdMatch = rightData.find(rightItem => 
+                    rightItem.id === leftItem.id && 
+                    rightItem.title.toLowerCase().trim() !== leftItem.title.toLowerCase().trim()
+                );
+                
+                if (sameIdMatch) {
+                    const similarity = calculateSimilarity(leftItem.title, sameIdMatch.title);
+                    const differences = findTextDifferences(leftItem.title, sameIdMatch.title);
+                    
+                    results.sameIdDifferentContent.push({
+                        left: leftItem,
+                        right: sameIdMatch,
+                        similarity: similarity,
+                        differences: differences,
+                        matchType: 'same_id_different_content'
+                    });
+                    results.used.add(sameIdMatch.id);
+                }
+            });
+
+            // Step 3: Find similar title matches for remaining items
+            leftData.forEach(leftItem => {
+                const alreadyMatched = results.exactMatches.some(match => match.left.id === leftItem.id) ||
+                                      results.sameIdDifferentContent.some(match => match.left.id === leftItem.id);
+                if (alreadyMatched) return;
+
+                let bestMatch = null;
+                let bestSimilarity = 0;
+
+                rightData.forEach(rightItem => {
+                    if (results.used.has(rightItem.id)) return;
+                    
+                    const similarity = calculateSimilarity(leftItem.title, rightItem.title);
+                    if (similarity > bestSimilarity && similarity >= threshold) {
+                        bestSimilarity = similarity;
+                        bestMatch = rightItem;
+                    }
+                });
+
+                if (bestMatch) {
+                    results.similarMatches.push({
+                        left: leftItem,
+                        right: bestMatch,
+                        similarity: bestSimilarity,
+                        matchType: 'similar_content'
+                    });
+                    results.used.add(bestMatch.id);
+                } else {
+                    results.leftOnly.push(leftItem);
+                }
+            });
+
+            // Step 4: Find right only items
+            rightData.forEach(rightItem => {
+                if (!results.used.has(rightItem.id)) {
+                    results.rightOnly.push(rightItem);
+                }
+            });
+
+            return results;
+        }
+
+        // Function to find specific differences between two texts
+        function findTextDifferences(text1, text2) {
+            const normalize = (s) => s.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            const words1 = normalize(text1).split(' ');
+            const words2 = normalize(text2).split(' ');
+            
+            const added = words2.filter(word => !words1.includes(word));
+            const removed = words1.filter(word => !words2.includes(word));
+            const common = words1.filter(word => words2.includes(word));
+            
+            return {
+                added: added,
+                removed: removed,
+                common: common,
+                addedText: added.length > 0 ? `Added: ${added.join(', ')}` : '',
+                removedText: removed.length > 0 ? `Removed: ${removed.join(', ')}` : ''
+            };
+        }
+
+        // Display results function
+        function displayResults(results, leftCount, rightCount, leftLabel, rightLabel, resultsId) {
+            const resultsDiv = document.getElementById(resultsId);
+            
+            // Calculate unique IDs and overlaps
+            const leftIds = new Set(window.lastLeftData.map(item => item.id));
+            const rightIds = new Set(window.lastRightData.map(item => item.id));
+            const allUniqueIds = new Set([...leftIds, ...rightIds]);
+            const commonIds = new Set([...leftIds].filter(id => rightIds.has(id)));
+            const leftOnlyIds = new Set([...leftIds].filter(id => !rightIds.has(id)));
+            const rightOnlyIds = new Set([...rightIds].filter(id => !leftIds.has(id)));
+            
+            const mappedCount = results.exactMatches.length + results.similarMatches.length + results.sameIdDifferentContent.length;
+            const mappingPercentage = Math.round((mappedCount / leftCount) * 100);
+            const idOverlapPercentage = Math.round((commonIds.size / allUniqueIds.size) * 100);
+            
+            let html = `
+                <div class="stats">
+                    📊 <strong>Mapping Summary:</strong> ${mappedCount}/${leftCount} ${leftLabel} controls mapped (${mappingPercentage}%)<br>
+                    📋 <strong>Results:</strong> ${results.exactMatches.length} exact | ${results.sameIdDifferentContent.length} same ID/diff content | 
+                    ${results.similarMatches.length} similar | ${results.leftOnly.length} ${leftLabel} only | ${results.rightOnly.length} ${rightLabel} only<br>
+                    🔢 <strong>Unique IDs:</strong> ${allUniqueIds.size} total (${leftIds.size} ${leftLabel}, ${rightIds.size} ${rightLabel}) | 
+                    ${commonIds.size} shared IDs (${idOverlapPercentage}% overlap)
+                </div>
+            `;
+
+            // ID Analysis Section
+            html += `
+                <div class="section">
+                    <div class="section-header" style="background: #6f42c1; color: white;" onclick="toggleSection('${resultsId}-id-analysis')">
+                        <span>🔢 ID Analysis Summary</span>
+                        <span id="${resultsId}-id-analysis-toggle">▼</span>
+                    </div>
+                    <div class="section-content" id="${resultsId}-id-analysis-content">
+                        <div class="match-item">
+                            <div class="check-id">📊 Dataset Overview</div>
+                            <div class="title">
+                                <strong>${leftLabel}:</strong> ${leftIds.size} unique control IDs<br>
+                                <strong>${rightLabel}:</strong> ${rightIds.size} unique control IDs<br>
+                                <strong>Total Unique:</strong> ${allUniqueIds.size} control IDs across both datasets
+                            </div>
+                        </div>
+                        <div class="match-item">
+                            <div class="check-id">🤝 ID Overlap Analysis</div>
+                            <div class="title">
+                                <strong>Shared IDs:</strong> ${commonIds.size} controls have the same ID in both datasets (${idOverlapPercentage}% overlap)<br>
+                                <strong>${leftLabel} Only IDs:</strong> ${leftOnlyIds.size} controls exist only in ${leftLabel}<br>
+                                <strong>${rightLabel} Only IDs:</strong> ${rightOnlyIds.size} controls exist only in ${rightLabel}
+                            </div>
+                        </div>
+                        ${commonIds.size > 0 ? `
+                        <div class="match-item">
+                            <div class="check-id">🔗 Shared Control IDs</div>
+                            <div class="title" style="font-family: 'Courier New', monospace; font-size: 11px; color: #28a745;">
+                                ${Array.from(commonIds).sort().join(', ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${leftOnlyIds.size > 0 && leftOnlyIds.size <= 20 ? `
+                        <div class="match-item">
+                            <div class="check-id">❌ ${leftLabel} Only IDs</div>
+                            <div class="title" style="font-family: 'Courier New', monospace; font-size: 11px; color: #dc3545;">
+                                ${Array.from(leftOnlyIds).sort().join(', ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${rightOnlyIds.size > 0 && rightOnlyIds.size <= 20 ? `
+                        <div class="match-item">
+                            <div class="check-id">➕ ${rightLabel} Only IDs</div>
+                            <div class="title" style="font-family: 'Courier New', monospace; font-size: 11px; color: #17a2b8;">
+                                ${Array.from(rightOnlyIds).sort().join(', ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Exact matches
+            html += createSection('exact-matches', `Exact Matches (${results.exactMatches.length})`, results.exactMatches, (match) => `
+                <div class="match-item">
+                    <div class="check-id">${leftLabel}: ${match.left.id} → ${rightLabel}: ${match.right.id}</div>
+                    <div class="title">✅ ${match.left.title}</div>
+                </div>
+            `, resultsId);
+
+            // Same ID, Different Content
+            html += createSection('same-id-different', `Same ID, Different Content (${results.sameIdDifferentContent.length})`, results.sameIdDifferentContent, (match) => `
+                <div class="match-item">
+                    <div class="check-id">
+                        🔄 Control ID: ${match.left.id}
+                        <span class="similarity-score">${Math.round(match.similarity * 100)}% similar</span>
+                    </div>
+                    <div class="title left-title">${leftLabel}: ${match.left.title}</div>
+                    <div class="title right-title">${rightLabel}: ${match.right.title}</div>
+                    ${match.differences.addedText ? `<div class="title" style="color: #28a745; font-size: 11px; margin-top: 5px;">➕ ${match.differences.addedText}</div>` : ''}
+                    ${match.differences.removedText ? `<div class="title" style="color: #dc3545; font-size: 11px;">➖ ${match.differences.removedText}</div>` : ''}
+                </div>
+            `, resultsId);
+
+            // Similar matches
+            html += createSection('similar-matches', `Similar Matches (${results.similarMatches.length})`, results.similarMatches, (match) => `
+                <div class="match-item">
+                    <div class="check-id">
+                        ${leftLabel}: ${match.left.id} → ${rightLabel}: ${match.right.id}
+                        <span class="similarity-score">${Math.round(match.similarity * 100)}%</span>
+                    </div>
+                    <div class="title left-title">${leftLabel}: ${match.left.title}</div>
+                    <div class="title right-title">${rightLabel}: ${match.right.title}</div>
+                </div>
+            `, resultsId);
+
+            // Left only
+            html += createSection('left-only', `${leftLabel} Only (${results.leftOnly.length})`, results.leftOnly, (item) => `
+                <div class="match-item">
+                    <div class="check-id">❌ ${item.id}</div>
+                    <div class="title">${item.title}</div>
+                </div>
+            `, resultsId);
+
+            // Right only
+            html += createSection('right-only', `${rightLabel} Only (${results.rightOnly.length})`, results.rightOnly, (item) => `
+                <div class="match-item">
+                    <div class="check-id">➕ ${item.id}</div>
+                    <div class="title">${item.title}</div>
+                </div>
+            `, resultsId);
+
+            // Export section
+            html += `
+                <div class="export-section">
+                    <h3>📥 Export Options</h3>
+                    <button class="export-button" onclick="exportMapping('csv', '${resultsId}')">Export CSV</button>
+                    <button class="export-button" onclick="exportMapping('json', '${resultsId}')">Export JSON</button>
+                    <p>Export the mapping results for documentation or further analysis.</p>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+            
+            // Store results globally for export (including ID analysis)
+            window[resultsId + '_results'] = {
+                ...results,
+                idAnalysis: {
+                    leftIds: Array.from(leftIds).sort(),
+                    rightIds: Array.from(rightIds).sort(),
+                    allUniqueIds: Array.from(allUniqueIds).sort(),
+                    commonIds: Array.from(commonIds).sort(),
+                    leftOnlyIds: Array.from(leftOnlyIds).sort(),
+                    rightOnlyIds: Array.from(rightOnlyIds).sort(),
+                    statistics: {
+                        totalUniqueIds: allUniqueIds.size,
+                        leftCount: leftIds.size,
+                        rightCount: rightIds.size,
+                        sharedCount: commonIds.size,
+                        leftOnlyCount: leftOnlyIds.size,
+                        rightOnlyCount: rightOnlyIds.size,
+                        overlapPercentage: idOverlapPercentage
+                    }
+                }
+            };
+        }
+
+        // Create section function
+        function createSection(className, title, items, itemRenderer, resultsId) {
+            if (items.length === 0) return '';
+            
+            const itemsHtml = items.map(itemRenderer).join('');
+            const sectionId = `${resultsId}-${className}`;
+            
+            return `
+                <div class="section">
+                    <div class="section-header ${className}" onclick="toggleSection('${sectionId}')">
+                        <span>${title}</span>
+                        <span id="${sectionId}-toggle">▼</span>
+                    </div>
+                    <div class="section-content" id="${sectionId}-content">
+                        ${itemsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle section function
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + '-content');
+            const toggle = document.getElementById(sectionId + '-toggle');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.textContent = '▼';
+            } else {
+                content.classList.add('collapsed');
+                toggle.textContent = '▶';
+            }
+        }
+
+        // Windows comparison function
+        function compareWindows() {
+            const leftText = document.getElementById('windows-left').value;
+            const rightText = document.getElementById('windows-right').value;
+            const threshold = parseFloat(document.getElementById('windowsThreshold').value);
+            
+            if (!leftText.trim() || !rightText.trim()) {
+                alert('Please enter data in both fields');
+                return;
+            }
+
+            const leftData = parseData(leftText);
+            const rightData = parseData(rightText);
+            
+            if (leftData.length === 0 || rightData.length === 0) {
+                alert('Could not parse the data. Please check the format.');
+                return;
+            }
+
+            // Store data globally for ID analysis
+            window.lastLeftData = leftData;
+            window.lastRightData = rightData;
+
+            const results = findBestMatches(leftData, rightData, threshold);
+            displayResults(results, leftData.length, rightData.length, 'Windows 2022', 'Company/Other', 'windows-results');
+        }
+
+        // RHEL comparison function
+        function compareRhel() {
+            const leftText = document.getElementById('rhel-left').value;
+            const rightText = document.getElementById('rhel-right').value;
+            const threshold = parseFloat(document.getElementById('rhelThreshold').value);
+            
+            if (!leftText.trim() || !rightText.trim()) {
+                alert('Please enter data in both fields');
+                return;
+            }
+
+            const leftData = parseData(leftText);
+            const rightData = parseData(rightText);
+            
+            if (leftData.length === 0 || rightData.length === 0) {
+                alert('Could not parse the data. Please check the format.');
+                return;
+            }
+
+            // Store data globally for ID analysis
+            window.lastLeftData = leftData;
+            window.lastRightData = rightData;
+
+            const results = findBestMatches(leftData, rightData, threshold);
+            displayResults(results, leftData.length, rightData.length, 'RHEL 8', 'Company/RHEL 9/Other', 'rhel-results');
+        }
+
+        // Export function
+        function exportMapping(format, resultsId) {
+            const results = window[resultsId + '_results'];
+            if (!results) {
+                alert('No results to export. Please run the analysis first.');
+                return;
+            }
+
+            let content = '';
+            let filename = '';
+            let mimeType = '';
+
+            try {
+                if (format === 'csv') {
+                    content = 'Type,Left_ID,Left_Title,Right_ID,Right_Title,Similarity,Differences\n';
+                    
+                    results.exactMatches.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        content += `Exact,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",100%,""\n`;
+                    });
+                    
+                    results.sameIdDifferentContent.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        const differences = `${match.differences.addedText} ${match.differences.removedText}`.trim().replace(/"/g, '""');
+                        content += `Same_ID_Different_Content,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%,"${differences}"\n`;
+                    });
+                    
+                    results.similarMatches.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        content += `Similar,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%,""\n`;
+                    });
+                    
+                    results.leftOnly.forEach(item => {
+                        const title = item.title.replace(/"/g, '""');
+                        content += `Left_Only,"${item.id}","${title}",,,"",""\n`;
+                    });
+                    
+                    results.rightOnly.forEach(item => {
+                        const title = item.title.replace(/"/g, '""');
+                        content += `Right_Only,,"","${item.id}","${title}","",""\n`;
+                    });
+
+                    // Add ID Analysis Summary
+                    if (results.idAnalysis) {
+                        content += '\n# ID Analysis Summary\n';
+                        content += `Total_Unique_IDs,${results.idAnalysis.statistics.totalUniqueIds},,,,,""\n`;
+                        content += `Left_Unique_IDs,${results.idAnalysis.statistics.leftCount},,,,,""\n`;
+                        content += `Right_Unique_IDs,${results.idAnalysis.statistics.rightCount},,,,,""\n`;
+                        content += `Shared_IDs,${results.idAnalysis.statistics.sharedCount},,,,,""\n`;
+                        content += `ID_Overlap_Percentage,${results.idAnalysis.statistics.overlapPercentage}%,,,,,""\n`;
+                        content += `Left_Only_IDs,"${results.idAnalysis.leftOnlyIds.join(', ')}",,,,,""\n`;
+                        content += `Right_Only_IDs,"${results.idAnalysis.rightOnlyIds.join(', ')}",,,,,""\n`;
+                        content += `Shared_IDs,"${results.idAnalysis.commonIds.join(', ')}",,,,,""\n`;
+                    }
+                    
+                    filename = `${resultsId}-mapping.csv`;
+                    mimeType = 'text/csv';
+                } else if (format === 'json') {
+                    content = JSON.stringify(results, null, 2);
+                    filename = `${resultsId}-mapping.json`;
+                    mimeType = 'application/json';
+                }
+
+                // Try modern download approach
+                if (navigator.userAgent.indexOf('Chrome') > -1 || navigator.userAgent.indexOf('Firefox') > -1) {
+                    const blob = new Blob([content], { type: mimeType });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    setTimeout(() => {
+                        alert(`✅ Export successful! Check your Downloads folder for: ${filename}`);
+                    }, 100);
+                } else {
+                    // Fallback: show content in alert for manual copy
+                    alert(`Copy this content and save as ${filename}:\n\n${content.substring(0, 500)}...`);
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Export failed. Please try again or contact support.');
+            }
+        }
+    </script>
 </body>
 </html>
