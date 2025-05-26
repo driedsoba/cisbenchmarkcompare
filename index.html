@@ -1,4 +1,48 @@
-<!DOCTYPE html>
+// Download report as file
+        function downloadReport(content, filename) {
+            try {
+                const blob = new Blob([content], { type: 'text/markdown' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                alert('💾 Report downloaded successfully!');
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Download failed. Please copy the text manually.');
+            }
+        }
+
+        // Export function
+        function exportMapping(format, resultsId) {
+            const results = window[resultsId + '_results'];
+            if (!results) {
+                alert('No results to export. Please run the analysis first.');
+                return;
+            }
+
+            let content = '';
+            let filename = '';
+            let mimeType = '';
+
+            try {
+                if (format === 'csv') {
+                    content = 'Type,Left_ID,Left_Title,Right_ID,Right_Title,Similarity,Differences\n';
+                    
+                    results.exactMatches.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        content += `Exact,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",100%,""\n`;
+                    });
+                    
+                    results.sameIdDifferentContent.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        const differences = `${match.differences.addedText} ${match.differences.r<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1279,7 +1323,8 @@
                     <h3>📥 Export Options</h3>
                     <button class="export-button" onclick="exportMapping('csv', '${resultsId}')">Export CSV</button>
                     <button class="export-button" onclick="exportMapping('json', '${resultsId}')">Export JSON</button>
-                    <p>Export the mapping results for documentation or further analysis.</p>
+                    <button class="export-button" style="background: #6f42c1;" onclick="generateReport('${resultsId}', '${leftLabel}', '${rightLabel}')">📄 Generate Report</button>
+                    <p>Export the mapping results for documentation or generate a comprehensive analysis report.</p>
                 </div>
             `;
 
@@ -1394,6 +1439,246 @@
 
             const results = findBestMatches(leftData, rightData, threshold);
             displayResults(results, leftData.length, rightData.length, 'RHEL 8', 'Company/RHEL 9/Other', 'rhel-results');
+        }
+
+        // Generate comprehensive analysis report
+        function generateReport(resultsId, leftLabel, rightLabel) {
+            const results = window[resultsId + '_results'];
+            if (!results) {
+                alert('No results to generate report from. Please run the analysis first.');
+                return;
+            }
+
+            const stats = results.idAnalysis.statistics;
+            const mappedCount = results.exactMatches.length + results.similarMatches.length + results.sameIdDifferentContent.length;
+            const mappingPercentage = Math.round((mappedCount / stats.leftCount) * 100);
+            
+            let report = `# 🔒 ${leftLabel} vs ${rightLabel} CIS Benchmark Analysis Report
+
+## 📊 Executive Summary
+
+- **Total Unique Controls**: ${stats.totalUniqueIds} across both versions
+- **${leftLabel} Controls**: ${stats.leftCount} controls analyzed
+- **${rightLabel} Controls**: ${stats.rightCount} controls analyzed
+- **Mapping Success Rate**: ${mappingPercentage}% (${mappedCount}/${stats.leftCount} ${leftLabel} controls mapped)
+- **ID Overlap**: ${stats.overlapPercentage}% (${stats.sharedCount} shared IDs out of ${stats.totalUniqueIds} total)
+
+## 🎯 Key Findings
+
+### 1. **ID Structure Changes**
+- **${stats.sharedCount} controls maintained the same ID** between versions
+- **${stats.leftOnlyCount + stats.rightOnlyCount} controls were renumbered** (${Math.round(((stats.leftOnlyCount + stats.rightOnlyCount) / stats.totalUniqueIds) * 100)}% of total)
+
+### 2. **Content Analysis**
+- **${results.exactMatches.length} controls have identical content and IDs**
+- **${results.sameIdDifferentContent.length} controls have same ID but different content**
+- **${results.similarMatches.length} controls have different IDs but same/similar content**
+
+---
+
+## 📋 Detailed Analysis
+
+`;
+
+            // Exact matches section
+            if (results.exactMatches.length > 0) {
+                report += `### ✅ **Controls with Same ID and Same Title** (${results.exactMatches.length} controls)
+
+| ${leftLabel} ID | ${rightLabel} ID | Title | Status |
+|${'-'.repeat(leftLabel.length + 3)}|${'-'.repeat(rightLabel.length + 3)}|-------|---------|
+`;
+                results.exactMatches.forEach(match => {
+                    report += `| ${match.left.id} | ${match.right.id} | ${match.left.title} | ✅ Unchanged |\n`;
+                });
+                report += '\n';
+            }
+
+            // Same ID, different content section
+            if (results.sameIdDifferentContent.length > 0) {
+                report += `### 🔄 **Controls with Same ID but Different Content** (${results.sameIdDifferentContent.length} controls)
+
+| Control ID | ${leftLabel} Title | ${rightLabel} Title | Similarity |
+|------------|${'-'.repeat(leftLabel.length + 6)}|${'-'.repeat(rightLabel.length + 6)}|------------|
+`;
+                results.sameIdDifferentContent.forEach(match => {
+                    report += `| ${match.left.id} | ${match.left.title} | ${match.right.title} | ${Math.round(match.similarity * 100)}% |\n`;
+                });
+                report += '\n';
+            }
+
+            // Similar matches section
+            if (results.similarMatches.length > 0) {
+                report += `### 🔄 **Controls with Different IDs but Same/Similar Titles** (${results.similarMatches.length} controls)
+
+| ${leftLabel} ID | ${rightLabel} ID | Title | Similarity |
+|${'-'.repeat(leftLabel.length + 3)}|${'-'.repeat(rightLabel.length + 3)}|-------|------------|
+`;
+                results.similarMatches.forEach(match => {
+                    const title = match.similarity === 1 ? match.left.title : 
+                        `${match.left.title} vs ${match.right.title}`;
+                    report += `| ${match.left.id} | ${match.right.id} | ${title} | ${Math.round(match.similarity * 100)}% |\n`;
+                });
+                report += '\n';
+            }
+
+            // Left only section
+            if (results.leftOnly.length > 0) {
+                report += `### ❌ **${leftLabel} Only Controls** (${results.leftOnly.length} controls)
+*Controls removed or significantly changed in ${rightLabel}:*
+
+| ID | Title | Analysis |
+|----|-------|----------|
+`;
+                results.leftOnly.forEach(item => {
+                    report += `| ${item.id} | ${item.title} | Removed or restructured in ${rightLabel} |\n`;
+                });
+                report += '\n';
+            }
+
+            // Right only section
+            if (results.rightOnly.length > 0) {
+                report += `### ➕ **${rightLabel} Only Controls** (${results.rightOnly.length} controls)
+*New controls introduced in ${rightLabel}:*
+
+| ID | Title | Analysis |
+|----|-------|----------|
+`;
+                results.rightOnly.forEach(item => {
+                    report += `| ${item.id} | ${item.title} | New control in ${rightLabel} |\n`;
+                });
+                report += '\n';
+            }
+
+            // ID Analysis section
+            if (results.idAnalysis) {
+                report += `## 🔢 ID Structure Analysis
+
+### **Shared Control IDs** (${stats.sharedCount} controls)
+`;
+                if (stats.sharedCount > 0) {
+                    report += `\`${results.idAnalysis.commonIds.join(', ')}\`\n\n`;
+                } else {
+                    report += `No controls maintained the same ID between versions.\n\n`;
+                }
+
+                report += `### **${leftLabel} Only IDs** (${stats.leftOnlyCount} controls)
+`;
+                if (stats.leftOnlyCount <= 20) {
+                    report += `\`${results.idAnalysis.leftOnlyIds.join(', ')}\`\n\n`;
+                } else {
+                    report += `${stats.leftOnlyCount} unique IDs (list truncated due to length)\n\n`;
+                }
+
+                report += `### **${rightLabel} Only IDs** (${stats.rightOnlyCount} controls)
+`;
+                if (stats.rightOnlyCount <= 20) {
+                    report += `\`${results.idAnalysis.rightOnlyIds.join(', ')}\`\n\n`;
+                } else {
+                    report += `${stats.rightOnlyCount} unique IDs (list truncated due to length)\n\n`;
+                }
+            }
+
+            // Recommendations section
+            report += `## 📈 Recommendations
+
+### **For Migration Planning:**
+1. **Focus on the ${results.exactMatches.length + results.similarMatches.length} mapped controls** - these can be directly mapped or easily updated
+2. **Review the ${results.leftOnly.length} ${leftLabel}-only controls** - determine if functionality is covered elsewhere in ${rightLabel}
+3. **Implement the ${results.rightOnly.length} new ${rightLabel} controls** - assess security impact and implementation requirements
+4. **Update automation scripts** - account for ID renumbering (${stats.overlapPercentage}% overlap indicates significant restructuring)
+
+### **Priority Actions:**
+1. **High Priority**: Review new ${rightLabel} controls for immediate security requirements
+2. **Medium Priority**: Map renumbered controls in security tools and documentation  
+3. **Low Priority**: Verify removed ${leftLabel} controls aren't needed for compliance
+
+### **Testing Strategy:**
+1. **Validate mapped controls** work with new IDs in ${rightLabel}
+2. **Test new ${rightLabel} controls** don't conflict with existing configurations
+3. **Verify security coverage** after implementing changes
+
+---
+
+## 📊 Statistics Summary
+
+| Metric | Count | Percentage |
+|--------|-------|------------|
+| **Total Controls Analyzed** | ${stats.leftCount + stats.rightCount} | 100% |
+| **Successfully Mapped** | ${mappedCount} | ${mappingPercentage}% |
+| **Same ID and Content** | ${results.exactMatches.length} | ${Math.round((results.exactMatches.length / stats.leftCount) * 100)}% |
+| **Same ID, Different Content** | ${results.sameIdDifferentContent.length} | ${Math.round((results.sameIdDifferentContent.length / stats.leftCount) * 100)}% |
+| **Different ID, Same Content** | ${results.similarMatches.length} | ${Math.round((results.similarMatches.length / stats.leftCount) * 100)}% |
+| **${rightLabel} New Controls** | ${results.rightOnly.length} | ${Math.round((results.rightOnly.length / stats.rightCount) * 100)}% |
+| **${leftLabel} Removed Controls** | ${results.leftOnly.length} | ${Math.round((results.leftOnly.length / stats.leftCount) * 100)}% |
+
+---
+
+*Report generated on ${new Date().toLocaleDateString()} using CIS Benchmark Comparison Tool*
+`;
+
+            // Display report in modal or download
+            showReportModal(report, `${leftLabel}-vs-${rightLabel}-Analysis-Report.md`);
+        }
+
+        // Show report in modal for copy/download
+        function showReportModal(reportContent, filename) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 1000; display: flex; 
+                align-items: center; justify-content: center; padding: 20px;
+            `;
+            
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white; padding: 30px; border-radius: 15px; 
+                max-width: 90%; max-height: 90%; overflow: auto;
+                box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            `;
+            
+            modalContent.innerHTML = `
+                <h2 style="color: #333; margin-top: 0;">📄 Analysis Report Generated</h2>
+                <p style="color: #666; margin-bottom: 20px;">Your comprehensive analysis report is ready. Copy the content below or download as a file.</p>
+                <textarea readonly style="width: 100%; height: 400px; font-family: 'Courier New', monospace; font-size: 12px; border: 2px solid #e0e0e0; border-radius: 8px; padding: 15px;">${reportContent}</textarea>
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove();" 
+                            style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        Close
+                    </button>
+                    <button onclick="copyReportToClipboard('${reportContent.replace(/'/g, "\\'")}');" 
+                            style="background: #17a2b8; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        📋 Copy to Clipboard
+                    </button>
+                    <button onclick="downloadReport('${reportContent.replace(/'/g, "\\'")}', '${filename}');" 
+                            style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        💾 Download File
+                    </button>
+                </div>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // Select all text for easy copying
+            const textarea = modalContent.querySelector('textarea');
+            textarea.select();
+        }
+
+        // Copy report to clipboard
+        function copyReportToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('📋 Report copied to clipboard!');
+                });
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('📋 Report copied to clipboard!');
+            }
         }
 
         // Export function
