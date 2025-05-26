@@ -1149,14 +1149,77 @@
         function displayResults(results, leftCount, rightCount, leftLabel, rightLabel, resultsId) {
             const resultsDiv = document.getElementById(resultsId);
             
+            // Calculate unique IDs and overlaps
+            const leftIds = new Set(window.lastLeftData.map(item => item.id));
+            const rightIds = new Set(window.lastRightData.map(item => item.id));
+            const allUniqueIds = new Set([...leftIds, ...rightIds]);
+            const commonIds = new Set([...leftIds].filter(id => rightIds.has(id)));
+            const leftOnlyIds = new Set([...leftIds].filter(id => !rightIds.has(id)));
+            const rightOnlyIds = new Set([...rightIds].filter(id => !leftIds.has(id)));
+            
             const mappedCount = results.exactMatches.length + results.similarMatches.length + results.sameIdDifferentContent.length;
             const mappingPercentage = Math.round((mappedCount / leftCount) * 100);
+            const idOverlapPercentage = Math.round((commonIds.size / allUniqueIds.size) * 100);
             
             let html = `
                 <div class="stats">
-                    📊 Mapping Summary: ${mappedCount}/${leftCount} ${leftLabel} controls mapped (${mappingPercentage}%) | 
-                    ${results.exactMatches.length} exact | ${results.sameIdDifferentContent.length} same ID/diff content | 
-                    ${results.similarMatches.length} similar | ${results.leftOnly.length} ${leftLabel} only | ${results.rightOnly.length} ${rightLabel} only
+                    📊 <strong>Mapping Summary:</strong> ${mappedCount}/${leftCount} ${leftLabel} controls mapped (${mappingPercentage}%)<br>
+                    📋 <strong>Results:</strong> ${results.exactMatches.length} exact | ${results.sameIdDifferentContent.length} same ID/diff content | 
+                    ${results.similarMatches.length} similar | ${results.leftOnly.length} ${leftLabel} only | ${results.rightOnly.length} ${rightLabel} only<br>
+                    🔢 <strong>Unique IDs:</strong> ${allUniqueIds.size} total (${leftIds.size} ${leftLabel}, ${rightIds.size} ${rightLabel}) | 
+                    ${commonIds.size} shared IDs (${idOverlapPercentage}% overlap)
+                </div>
+            `;
+
+            // ID Analysis Section
+            html += `
+                <div class="section">
+                    <div class="section-header" style="background: #6f42c1; color: white;" onclick="toggleSection('${resultsId}-id-analysis')">
+                        <span>🔢 ID Analysis Summary</span>
+                        <span id="${resultsId}-id-analysis-toggle">▼</span>
+                    </div>
+                    <div class="section-content" id="${resultsId}-id-analysis-content">
+                        <div class="match-item">
+                            <div class="check-id">📊 Dataset Overview</div>
+                            <div class="title">
+                                <strong>${leftLabel}:</strong> ${leftIds.size} unique control IDs<br>
+                                <strong>${rightLabel}:</strong> ${rightIds.size} unique control IDs<br>
+                                <strong>Total Unique:</strong> ${allUniqueIds.size} control IDs across both datasets
+                            </div>
+                        </div>
+                        <div class="match-item">
+                            <div class="check-id">🤝 ID Overlap Analysis</div>
+                            <div class="title">
+                                <strong>Shared IDs:</strong> ${commonIds.size} controls have the same ID in both datasets (${idOverlapPercentage}% overlap)<br>
+                                <strong>${leftLabel} Only IDs:</strong> ${leftOnlyIds.size} controls exist only in ${leftLabel}<br>
+                                <strong>${rightLabel} Only IDs:</strong> ${rightOnlyIds.size} controls exist only in ${rightLabel}
+                            </div>
+                        </div>
+                        ${commonIds.size > 0 ? `
+                        <div class="match-item">
+                            <div class="check-id">🔗 Shared Control IDs</div>
+                            <div class="title" style="font-family: 'Courier New', monospace; font-size: 11px; color: #28a745;">
+                                ${Array.from(commonIds).sort().join(', ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${leftOnlyIds.size > 0 && leftOnlyIds.size <= 20 ? `
+                        <div class="match-item">
+                            <div class="check-id">❌ ${leftLabel} Only IDs</div>
+                            <div class="title" style="font-family: 'Courier New', monospace; font-size: 11px; color: #dc3545;">
+                                ${Array.from(leftOnlyIds).sort().join(', ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${rightOnlyIds.size > 0 && rightOnlyIds.size <= 20 ? `
+                        <div class="match-item">
+                            <div class="check-id">➕ ${rightLabel} Only IDs</div>
+                            <div class="title" style="font-family: 'Courier New', monospace; font-size: 11px; color: #17a2b8;">
+                                ${Array.from(rightOnlyIds).sort().join(', ')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
                 </div>
             `;
 
@@ -1222,8 +1285,27 @@
 
             resultsDiv.innerHTML = html;
             
-            // Store results globally for export
-            window[resultsId + '_results'] = results;
+            // Store results globally for export (including ID analysis)
+            window[resultsId + '_results'] = {
+                ...results,
+                idAnalysis: {
+                    leftIds: Array.from(leftIds).sort(),
+                    rightIds: Array.from(rightIds).sort(),
+                    allUniqueIds: Array.from(allUniqueIds).sort(),
+                    commonIds: Array.from(commonIds).sort(),
+                    leftOnlyIds: Array.from(leftOnlyIds).sort(),
+                    rightOnlyIds: Array.from(rightOnlyIds).sort(),
+                    statistics: {
+                        totalUniqueIds: allUniqueIds.size,
+                        leftCount: leftIds.size,
+                        rightCount: rightIds.size,
+                        sharedCount: commonIds.size,
+                        leftOnlyCount: leftOnlyIds.size,
+                        rightOnlyCount: rightOnlyIds.size,
+                        overlapPercentage: idOverlapPercentage
+                    }
+                }
+            };
         }
 
         // Create section function
@@ -1279,6 +1361,10 @@
                 return;
             }
 
+            // Store data globally for ID analysis
+            window.lastLeftData = leftData;
+            window.lastRightData = rightData;
+
             const results = findBestMatches(leftData, rightData, threshold);
             displayResults(results, leftData.length, rightData.length, 'Windows 2022', 'Company/Other', 'windows-results');
         }
@@ -1301,6 +1387,10 @@
                 alert('Could not parse the data. Please check the format.');
                 return;
             }
+
+            // Store data globally for ID analysis
+            window.lastLeftData = leftData;
+            window.lastRightData = rightData;
 
             const results = findBestMatches(leftData, rightData, threshold);
             displayResults(results, leftData.length, rightData.length, 'RHEL 8', 'Company/RHEL 9/Other', 'rhel-results');
@@ -1350,6 +1440,19 @@
                         const title = item.title.replace(/"/g, '""');
                         content += `Right_Only,,"","${item.id}","${title}","",""\n`;
                     });
+
+                    // Add ID Analysis Summary
+                    if (results.idAnalysis) {
+                        content += '\n# ID Analysis Summary\n';
+                        content += `Total_Unique_IDs,${results.idAnalysis.statistics.totalUniqueIds},,,,,""\n`;
+                        content += `Left_Unique_IDs,${results.idAnalysis.statistics.leftCount},,,,,""\n`;
+                        content += `Right_Unique_IDs,${results.idAnalysis.statistics.rightCount},,,,,""\n`;
+                        content += `Shared_IDs,${results.idAnalysis.statistics.sharedCount},,,,,""\n`;
+                        content += `ID_Overlap_Percentage,${results.idAnalysis.statistics.overlapPercentage}%,,,,,""\n`;
+                        content += `Left_Only_IDs,"${results.idAnalysis.leftOnlyIds.join(', ')}",,,,,""\n`;
+                        content += `Right_Only_IDs,"${results.idAnalysis.rightOnlyIds.join(', ')}",,,,,""\n`;
+                        content += `Shared_IDs,"${results.idAnalysis.commonIds.join(', ')}",,,,,""\n`;
+                    }
                     
                     filename = `${resultsId}-mapping.csv`;
                     mimeType = 'text/csv';
