@@ -297,6 +297,7 @@
         
         .exact-matches { background: #28a745; }
         .similar-matches { background: #ffc107; color: #333; }
+        .same-id-different { background: #fd7e14; color: white; }
         .left-only { background: #dc3545; }
         .right-only { background: #17a2b8; }
         
@@ -1034,14 +1035,16 @@
             const results = {
                 exactMatches: [],
                 similarMatches: [],
+                sameIdDifferentContent: [],
                 leftOnly: [],
                 rightOnly: [],
                 used: new Set()
             };
 
-            // Find exact title matches first
+            // Step 1: Find exact ID and title matches
             leftData.forEach(leftItem => {
                 const exactMatch = rightData.find(rightItem => 
+                    rightItem.id === leftItem.id && 
                     rightItem.title.toLowerCase().trim() === leftItem.title.toLowerCase().trim()
                 );
                 
@@ -1049,15 +1052,42 @@
                     results.exactMatches.push({
                         left: leftItem,
                         right: exactMatch,
-                        similarity: 1.0
+                        similarity: 1.0,
+                        matchType: 'exact'
                     });
                     results.used.add(exactMatch.id);
                 }
             });
 
-            // Find similar matches for remaining items
+            // Step 2: Find same ID but different content
             leftData.forEach(leftItem => {
                 const alreadyMatched = results.exactMatches.some(match => match.left.id === leftItem.id);
+                if (alreadyMatched) return;
+
+                const sameIdMatch = rightData.find(rightItem => 
+                    rightItem.id === leftItem.id && 
+                    rightItem.title.toLowerCase().trim() !== leftItem.title.toLowerCase().trim()
+                );
+                
+                if (sameIdMatch) {
+                    const similarity = calculateSimilarity(leftItem.title, sameIdMatch.title);
+                    const differences = findTextDifferences(leftItem.title, sameIdMatch.title);
+                    
+                    results.sameIdDifferentContent.push({
+                        left: leftItem,
+                        right: sameIdMatch,
+                        similarity: similarity,
+                        differences: differences,
+                        matchType: 'same_id_different_content'
+                    });
+                    results.used.add(sameIdMatch.id);
+                }
+            });
+
+            // Step 3: Find similar title matches for remaining items
+            leftData.forEach(leftItem => {
+                const alreadyMatched = results.exactMatches.some(match => match.left.id === leftItem.id) ||
+                                      results.sameIdDifferentContent.some(match => match.left.id === leftItem.id);
                 if (alreadyMatched) return;
 
                 let bestMatch = null;
@@ -1077,7 +1107,8 @@
                     results.similarMatches.push({
                         left: leftItem,
                         right: bestMatch,
-                        similarity: bestSimilarity
+                        similarity: bestSimilarity,
+                        matchType: 'similar_content'
                     });
                     results.used.add(bestMatch.id);
                 } else {
@@ -1085,7 +1116,7 @@
                 }
             });
 
-            // Find right only items
+            // Step 4: Find right only items
             rightData.forEach(rightItem => {
                 if (!results.used.has(rightItem.id)) {
                     results.rightOnly.push(rightItem);
@@ -1095,18 +1126,37 @@
             return results;
         }
 
+        // Function to find specific differences between two texts
+        function findTextDifferences(text1, text2) {
+            const normalize = (s) => s.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            const words1 = normalize(text1).split(' ');
+            const words2 = normalize(text2).split(' ');
+            
+            const added = words2.filter(word => !words1.includes(word));
+            const removed = words1.filter(word => !words2.includes(word));
+            const common = words1.filter(word => words2.includes(word));
+            
+            return {
+                added: added,
+                removed: removed,
+                common: common,
+                addedText: added.length > 0 ? `Added: ${added.join(', ')}` : '',
+                removedText: removed.length > 0 ? `Removed: ${removed.join(', ')}` : ''
+            };
+        }
+
         // Display results function
         function displayResults(results, leftCount, rightCount, leftLabel, rightLabel, resultsId) {
             const resultsDiv = document.getElementById(resultsId);
             
-            const mappedCount = results.exactMatches.length + results.similarMatches.length;
+            const mappedCount = results.exactMatches.length + results.similarMatches.length + results.sameIdDifferentContent.length;
             const mappingPercentage = Math.round((mappedCount / leftCount) * 100);
             
             let html = `
                 <div class="stats">
                     📊 Mapping Summary: ${mappedCount}/${leftCount} ${leftLabel} controls mapped (${mappingPercentage}%) | 
-                    ${results.exactMatches.length} exact | ${results.similarMatches.length} similar | 
-                    ${results.leftOnly.length} ${leftLabel} only | ${results.rightOnly.length} ${rightLabel} only
+                    ${results.exactMatches.length} exact | ${results.sameIdDifferentContent.length} same ID/diff content | 
+                    ${results.similarMatches.length} similar | ${results.leftOnly.length} ${leftLabel} only | ${results.rightOnly.length} ${rightLabel} only
                 </div>
             `;
 
@@ -1115,6 +1165,20 @@
                 <div class="match-item">
                     <div class="check-id">${leftLabel}: ${match.left.id} → ${rightLabel}: ${match.right.id}</div>
                     <div class="title">✅ ${match.left.title}</div>
+                </div>
+            `, resultsId);
+
+            // Same ID, Different Content
+            html += createSection('same-id-different', `Same ID, Different Content (${results.sameIdDifferentContent.length})`, results.sameIdDifferentContent, (match) => `
+                <div class="match-item">
+                    <div class="check-id">
+                        🔄 Control ID: ${match.left.id}
+                        <span class="similarity-score">${Math.round(match.similarity * 100)}% similar</span>
+                    </div>
+                    <div class="title left-title">${leftLabel}: ${match.left.title}</div>
+                    <div class="title right-title">${rightLabel}: ${match.right.title}</div>
+                    ${match.differences.addedText ? `<div class="title" style="color: #28a745; font-size: 11px; margin-top: 5px;">➕ ${match.differences.addedText}</div>` : ''}
+                    ${match.differences.removedText ? `<div class="title" style="color: #dc3545; font-size: 11px;">➖ ${match.differences.removedText}</div>` : ''}
                 </div>
             `, resultsId);
 
@@ -1256,28 +1320,35 @@
 
             try {
                 if (format === 'csv') {
-                    content = 'Type,Left_ID,Left_Title,Right_ID,Right_Title,Similarity\n';
+                    content = 'Type,Left_ID,Left_Title,Right_ID,Right_Title,Similarity,Differences\n';
                     
                     results.exactMatches.forEach(match => {
                         const leftTitle = match.left.title.replace(/"/g, '""');
                         const rightTitle = match.right.title.replace(/"/g, '""');
-                        content += `Exact,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",100%\n`;
+                        content += `Exact,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",100%,""\n`;
+                    });
+                    
+                    results.sameIdDifferentContent.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        const differences = `${match.differences.addedText} ${match.differences.removedText}`.trim().replace(/"/g, '""');
+                        content += `Same_ID_Different_Content,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%,"${differences}"\n`;
                     });
                     
                     results.similarMatches.forEach(match => {
                         const leftTitle = match.left.title.replace(/"/g, '""');
                         const rightTitle = match.right.title.replace(/"/g, '""');
-                        content += `Similar,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%\n`;
+                        content += `Similar,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%,""\n`;
                     });
                     
                     results.leftOnly.forEach(item => {
                         const title = item.title.replace(/"/g, '""');
-                        content += `Left_Only,"${item.id}","${title}",,,""\n`;
+                        content += `Left_Only,"${item.id}","${title}",,,"",""\n`;
                     });
                     
                     results.rightOnly.forEach(item => {
                         const title = item.title.replace(/"/g, '""');
-                        content += `Right_Only,,"","${item.id}","${title}",""\n`;
+                        content += `Right_Only,,"","${item.id}","${title}","",""\n`;
                     });
                     
                     filename = `${resultsId}-mapping.csv`;
