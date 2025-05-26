@@ -960,22 +960,10 @@
             });
             
             // Show selected page
-            const targetPage = document.getElementById(pageId);
-            if (targetPage) {
-                targetPage.classList.add('active');
-            }
+            document.getElementById(pageId).classList.add('active');
             
-            // Set active tab - find the clicked tab
-            const clickedTab = Array.from(document.querySelectorAll('.nav-tab')).find(tab => {
-                return tab.textContent.toLowerCase().includes(pageId) || 
-                       (pageId === 'home' && tab.textContent.includes('HOME')) ||
-                       (pageId === 'windows2022' && tab.textContent.includes('WINDOWS')) ||
-                       (pageId === 'rhel8' && tab.textContent.includes('RHEL'));
-            });
-            
-            if (clickedTab) {
-                clickedTab.classList.add('active');
-            }
+            // Set active tab
+            event.target.classList.add('active');
         }
 
         // Update threshold displays
@@ -1040,25 +1028,6 @@
             const union = new Set([...words1, ...words2]);
             
             return intersection.size / union.size;
-        }
-
-        // Function to find specific differences between two texts
-        function findTextDifferences(text1, text2) {
-            const normalize = (s) => s.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
-            const words1 = normalize(text1).split(' ');
-            const words2 = normalize(text2).split(' ');
-            
-            const added = words2.filter(word => !words1.includes(word));
-            const removed = words1.filter(word => !words2.includes(word));
-            const common = words1.filter(word => words2.includes(word));
-            
-            return {
-                added: added,
-                removed: removed,
-                common: common,
-                addedText: added.length > 0 ? `Added: ${added.join(', ')}` : '',
-                removedText: removed.length > 0 ? `Removed: ${removed.join(', ')}` : ''
-            };
         }
 
         // Find best matches
@@ -1155,6 +1124,25 @@
             });
 
             return results;
+        }
+
+        // Function to find specific differences between two texts
+        function findTextDifferences(text1, text2) {
+            const normalize = (s) => s.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            const words1 = normalize(text1).split(' ');
+            const words2 = normalize(text2).split(' ');
+            
+            const added = words2.filter(word => !words1.includes(word));
+            const removed = words1.filter(word => !words2.includes(word));
+            const common = words1.filter(word => words2.includes(word));
+            
+            return {
+                added: added,
+                removed: removed,
+                common: common,
+                addedText: added.length > 0 ? `Added: ${added.join(', ')}` : '',
+                removedText: removed.length > 0 ? `Removed: ${removed.join(', ')}` : ''
+            };
         }
 
         // Display results function
