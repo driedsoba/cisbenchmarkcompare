@@ -196,12 +196,6 @@ Machine-readable format for automation and integration:
 - **Privacy**: All processing happens client-side
 - **Export**: Modern browser download API with fallbacks
 
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Fork this repository
-2. Connect to [Vercel](https://vercel.com)
-3. Deploy automatically
 
 ### Local Development
 ```bash
@@ -217,11 +211,6 @@ npx serve .
 # Open browser
 open http://localhost:8000
 ```
-
-### Other Platforms
-- **Netlify**: Drag and drop the files
-- **GitHub Pages**: Enable in repository settings
-- **Any web server**: Upload `index.html`
 
 ## 📝 Sample Data Sources
 
