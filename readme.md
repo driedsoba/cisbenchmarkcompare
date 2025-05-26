@@ -1,6 +1,5 @@
 # 🔒 CIS Benchmark Comparison Tool
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/driedsoba/cisbenchmarkcompare)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
