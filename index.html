@@ -960,11 +960,40 @@
             });
             
             // Show selected page
-            document.getElementById(pageId).classList.add('active');
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
             
-            // Set active tab
-            event.target.classList.add('active');
+            // Set active tab - find the clicked tab
+            const clickedTab = Array.from(document.querySelectorAll('.nav-tab')).find(tab => {
+                return tab.textContent.toLowerCase().includes(pageId) || 
+                       (pageId === 'home' && tab.textContent.includes('HOME')) ||
+                       (pageId === 'windows2022' && tab.textContent.includes('WINDOWS')) ||
+                       (pageId === 'rhel8' && tab.textContent.includes('RHEL'));
+            });
+            
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
         }
+
+        // Add click event listeners when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add navigation event listeners
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const text = this.textContent.toLowerCase();
+                    if (text.includes('home')) {
+                        showPage('home');
+                    } else if (text.includes('windows')) {
+                        showPage('windows2022');
+                    } else if (text.includes('rhel')) {
+                        showPage('rhel8');
+                    }
+                });
+            });
+        });
 
         // Update threshold displays
         document.getElementById('windowsThreshold').addEventListener('input', function() {
