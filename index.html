@@ -1,48 +1,4 @@
-// Download report as file
-        function downloadReport(content, filename) {
-            try {
-                const blob = new Blob([content], { type: 'text/markdown' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                alert('💾 Report downloaded successfully!');
-            } catch (error) {
-                console.error('Download error:', error);
-                alert('Download failed. Please copy the text manually.');
-            }
-        }
-
-        // Export function
-        function exportMapping(format, resultsId) {
-            const results = window[resultsId + '_results'];
-            if (!results) {
-                alert('No results to export. Please run the analysis first.');
-                return;
-            }
-
-            let content = '';
-            let filename = '';
-            let mimeType = '';
-
-            try {
-                if (format === 'csv') {
-                    content = 'Type,Left_ID,Left_Title,Right_ID,Right_Title,Similarity,Differences\n';
-                    
-                    results.exactMatches.forEach(match => {
-                        const leftTitle = match.left.title.replace(/"/g, '""');
-                        const rightTitle = match.right.title.replace(/"/g, '""');
-                        content += `Exact,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",100%,""\n`;
-                    });
-                    
-                    results.sameIdDifferentContent.forEach(match => {
-                        const leftTitle = match.left.title.replace(/"/g, '""');
-                        const rightTitle = match.right.title.replace(/"/g, '""');
-                        const differences = `${match.differences.addedText} ${match.differences.r<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1669,20 +1625,147 @@
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text).then(() => {
                     alert('📋 Report copied to clipboard!');
+                }).catch(err => {
+                    console.error('Clipboard error:', err);
+                    fallbackCopyToClipboard(text);
                 });
             } else {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
+                fallbackCopyToClipboard(text);
+            }
+        }
+
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
                 document.execCommand('copy');
-                document.body.removeChild(textArea);
                 alert('📋 Report copied to clipboard!');
+            } catch (err) {
+                console.error('Copy failed:', err);
+                alert('Copy failed. Please select and copy the text manually.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // Download report as file
+        function downloadReport(content, filename) {
+            try {
+                const blob = new Blob([content], { type: 'text/markdown' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                setTimeout(() => {
+                    alert('💾 Report downloaded successfully!');
+                }, 100);
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Download failed. Please copy the text manually and save as a .md file.');
             }
         }
 
         // Export function
         function exportMapping(format, resultsId) {
+            const results = window[resultsId + '_results'];
+            if (!results) {
+                alert('No results to export. Please run the analysis first.');
+                return;
+            }
+
+            let content = '';
+            let filename = '';
+            let mimeType = '';
+
+            try {
+                if (format === 'csv') {
+                    content = 'Type,Left_ID,Left_Title,Right_ID,Right_Title,Similarity,Differences\n';
+                    
+                    results.exactMatches.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        content += `Exact,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",100%,""\n`;
+                    });
+                    
+                    results.sameIdDifferentContent.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        const differences = `${match.differences.addedText} ${match.differences.removedText}`.trim().replace(/"/g, '""');
+                        content += `Same_ID_Different_Content,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%,"${differences}"\n`;
+                    });
+                    
+                    results.similarMatches.forEach(match => {
+                        const leftTitle = match.left.title.replace(/"/g, '""');
+                        const rightTitle = match.right.title.replace(/"/g, '""');
+                        content += `Similar,"${match.left.id}","${leftTitle}","${match.right.id}","${rightTitle}",${Math.round(match.similarity * 100)}%,""\n`;
+                    });
+                    
+                    results.leftOnly.forEach(item => {
+                        const title = item.title.replace(/"/g, '""');
+                        content += `Left_Only,"${item.id}","${title}",,,"",""\n`;
+                    });
+                    
+                    results.rightOnly.forEach(item => {
+                        const title = item.title.replace(/"/g, '""');
+                        content += `Right_Only,,"","${item.id}","${title}","",""\n`;
+                    });
+
+                    // Add ID Analysis Summary
+                    if (results.idAnalysis) {
+                        content += '\n# ID Analysis Summary\n';
+                        content += `Total_Unique_IDs,${results.idAnalysis.statistics.totalUniqueIds},,,,,""\n`;
+                        content += `Left_Unique_IDs,${results.idAnalysis.statistics.leftCount},,,,,""\n`;
+                        content += `Right_Unique_IDs,${results.idAnalysis.statistics.rightCount},,,,,""\n`;
+                        content += `Shared_IDs,${results.idAnalysis.statistics.sharedCount},,,,,""\n`;
+                        content += `ID_Overlap_Percentage,${results.idAnalysis.statistics.overlapPercentage}%,,,,,""\n`;
+                        content += `Left_Only_IDs,"${results.idAnalysis.leftOnlyIds.join(', ')}",,,,,""\n`;
+                        content += `Right_Only_IDs,"${results.idAnalysis.rightOnlyIds.join(', ')}",,,,,""\n`;
+                        content += `Shared_IDs,"${results.idAnalysis.commonIds.join(', ')}",,,,,""\n`;
+                    }
+                    
+                    filename = `${resultsId}-mapping.csv`;
+                    mimeType = 'text/csv';
+                } else if (format === 'json') {
+                    content = JSON.stringify(results, null, 2);
+                    filename = `${resultsId}-mapping.json`;
+                    mimeType = 'application/json';
+                }
+
+                // Try modern download approach
+                if (navigator.userAgent.indexOf('Chrome') > -1 || navigator.userAgent.indexOf('Firefox') > -1) {
+                    const blob = new Blob([content], { type: mimeType });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    setTimeout(() => {
+                        alert(`✅ Export successful! Check your Downloads folder for: ${filename}`);
+                    }, 100);
+                } else {
+                    // Fallback: show content in alert for manual copy
+                    alert(`Copy this content and save as ${filename}:\n\n${content.substring(0, 500)}...`);
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Export failed. Please try again or contact support.');
+            }
+        }
             const results = window[resultsId + '_results'];
             if (!results) {
                 alert('No results to export. Please run the analysis first.');
